@@ -1,6 +1,43 @@
 # claude-pi-bridge
 
-MCP server that lets Claude Code spawn and manage headless Pi coding agents.
+MCP server that lets **Claude Code** spawn and manage headless [**Pi**](https://pi.dev) coding agents in parallel. No terminal windows needed.
+
+**GitHub:** [masterbatcoderman10/claude-pi-bridge](https://github.com/masterbatcoderman10/claude-pi-bridge)
+
+---
+
+## What This Does
+
+Claude Code is great at orchestration. Pi is a fast, capable coding agent. This bridge connects them:
+
+```
+You (in Claude Code):
+  "Spawn 3 Pi agents — one writes tests, one refactors auth, one updates docs."
+
+Claude Code:
+  [pi_spawn] agent-1 on Groq
+  [pi_spawn] agent-2 on Anthropic
+  [pi_spawn] agent-3 on OpenRouter
+  [pi_prompt] assign tasks
+
+Later:
+  "Status?"
+  [pi_get_state x3]
+  "Collect results from the done ones."
+  [pi_get_result x2]
+```
+
+Pi agents run **headless** in the background. Claude manages them like a project lead managing a team.
+
+---
+
+## Prerequisites
+
+- **Node.js >= 20**
+- **Pi CLI** installed globally: `npm install -g @earendil-works/pi-coding-agent`
+- **API keys** for at least one provider (OpenRouter, Anthropic, Groq, etc.)
+
+---
 
 ## Install
 
@@ -8,7 +45,7 @@ MCP server that lets Claude Code spawn and manage headless Pi coding agents.
 npm install -g claude-pi-bridge
 ```
 
-Requires Node.js >= 20 and the `pi` CLI installed globally.
+---
 
 ## Configure
 
@@ -19,20 +56,20 @@ Create `~/.claude-pi-bridge/config.json`:
   "providers": {
     "anthropic": {
       "apiKeyEnvVar": "ANTHROPIC_API_KEY",
-      "defaultModel": "claude-sonnet-4-20250514"
+      "defaultModel": "claude-sonnet-4"
     },
     "openrouter": {
       "apiKeyEnvVar": "OPENROUTER_API_KEY",
-      "defaultModel": "anthropic/claude-sonnet-4"
+      "defaultModel": "moonshotai/kimi-k2.6"
     },
     "groq": {
       "apiKeyEnvVar": "GROQ_API_KEY",
-      "defaultModel": "llama-3.3-70b-versatile"
+      "defaultModel": "openai/gpt-oss-120b"
     }
   },
   "defaults": {
     "provider": "openrouter",
-    "model": "anthropic/claude-sonnet-4",
+    "model": "moonshotai/kimi-k2.6",
     "thinkingLevel": "medium"
   },
   "limits": {
@@ -42,12 +79,17 @@ Create `~/.claude-pi-bridge/config.json`:
 }
 ```
 
-Set your API keys as environment variables (e.g., in `~/.zshrc`):
+Set your API keys as environment variables (e.g., in `~/.zshrc` or `~/.bashrc`):
 
 ```bash
 export ANTHROPIC_API_KEY="sk-..."
-export OPENROUTER_API_KEY="sk-..."
+export OPENROUTER_API_KEY="sk-or-..."
+export GROQ_API_KEY="gsk-..."
 ```
+
+**How auth works:** The bridge reads your config, resolves the provider's API key env var name, and passes it to each Pi process as an environment variable. Pi then uses that key for its LLM calls. Your keys never appear in Claude Code's context.
+
+---
 
 ## Claude Code Setup
 
@@ -65,15 +107,17 @@ Add to `~/.mcp.json`:
 
 Restart Claude Code or run `/mcp` to load the server.
 
+---
+
 ## Usage Examples
 
 ### Spawn an agent
 
 ```
-Spawn a Pi agent named "backend-worker" in ~/projects/api with provider anthropic and model claude-sonnet-4.
+You: "Spawn a Pi agent named 'backend-worker' in ~/projects/api using Anthropic's Claude."
 ```
 
-Claude Code calls `pi_spawn` with:
+Claude calls `pi_spawn` with:
 - `name`: `backend-worker`
 - `cwd`: `~/projects/api`
 - `provider`: `anthropic`
@@ -82,40 +126,68 @@ Claude Code calls `pi_spawn` with:
 ### Send a prompt
 
 ```
-Ask backend-worker to generate a FastAPI router for user CRUD.
+You: "Ask backend-worker to generate a FastAPI router for user CRUD."
 ```
 
-Claude Code calls `pi_prompt` with:
+Claude calls `pi_prompt` with:
 - `id`: `backend-worker`
 - `message`: `Generate a FastAPI router for user CRUD.`
 
 ### Get the result
 
 ```
-Wait for backend-worker to finish and show me the output.
+You: "Wait for backend-worker to finish and show me the output."
 ```
 
-Claude Code calls `pi_get_result` with:
+Claude calls `pi_get_result` with:
 - `id`: `backend-worker`
 
-### List running agents
+Returns the full text of Pi's last assistant message.
+
+### Check status
 
 ```
-Show me all running Pi agents.
+You: "What's the status of all my Pi agents?"
 ```
 
-Claude Code calls `pi_list`.
+Claude calls `pi_list`.
 
 ### Stop an agent
 
 ```
-Kill the backend-worker agent.
+You: "Kill the backend-worker agent."
 ```
 
-Claude Code calls `pi_stop` with:
+Claude calls `pi_stop` with:
 - `id`: `backend-worker`
 
-## HTTP API
+### Parallel batch
+
+```
+You: "Spawn 3 agents on Groq's cheap tier and assign them: tests for auth.ts,
+      refactor db.ts, update API docs."
+```
+
+Claude spawns 3 agents, sends prompts, then you collect results as they finish.
+
+---
+
+## Available MCP Tools
+
+| Tool | Description | Args |
+|------|-------------|------|
+| `pi_spawn` | Spawn a new Pi coding agent | `name`, `cwd`, `provider?`, `model?`, `thinkingLevel?`, `initialPrompt?` |
+| `pi_prompt` | Send a message to a running agent | `id`, `message` |
+| `pi_steer` | Interrupt an agent mid-task | `id`, `message` |
+| `pi_get_state` | Get agent state (model, streaming, msg count) | `id` |
+| `pi_get_result` | Wait for idle, return last assistant text | `id`, `timeout?` |
+| `pi_list` | List all running agents | — |
+| `pi_stop` | Kill a running agent | `id` |
+| `pi_bash` | Run bash via the agent's shell | `id`, `command` |
+
+---
+
+## HTTP API (for Hermes/scripts)
 
 Run the standalone HTTP server:
 
@@ -125,13 +197,13 @@ claude-pi-bridge-http
 CLAUDE_PI_BRIDGE_PORT=8080 claude-pi-bridge-http
 ```
 
-Endpoints (all POST, JSON body):
+All endpoints accept POST with JSON body and return JSON.
 
 ### `POST /spawn`
 ```bash
 curl -X POST http://localhost:9090/spawn \
   -H "Content-Type: application/json" \
-  -d '{"name":"worker-1","cwd":"~/projects/api","provider":"anthropic","model":"claude-sonnet-4"}'
+  -d '{"name":"worker-1","cwd":"~/projects/api","provider":"groq","model":"openai/gpt-oss-120b"}'
 ```
 
 ### `POST /prompt`
@@ -181,15 +253,40 @@ curl -X POST http://localhost:9090/bash \
   -d '{"id":"worker-1","command":"git status"}'
 ```
 
-## Available MCP Tools
+---
 
-| Tool | Description |
-|------|-------------|
-| `pi_spawn` | Spawn a new Pi coding agent. Args: `name`, `cwd`, optional `provider`, `model`, `thinkingLevel`, `initialPrompt` |
-| `pi_prompt` | Send a message to a running agent. Args: `id`, `message` |
-| `pi_steer` | Interrupt an agent mid-task with a steering message. Args: `id`, `message` |
-| `pi_get_state` | Get the current state of an agent. Args: `id` |
-| `pi_get_result` | Wait for agent to become idle and return the last assistant text. Args: `id`, optional `timeout` |
-| `pi_list` | List all running agents. No args. |
-| `pi_stop` | Kill a running agent. Args: `id` |
-| `pi_bash` | Run a bash command via an agent. Args: `id`, `command` |
+## Architecture
+
+```
+┌─────────────┐   MCP stdio    ┌──────────────┐   JSONL (pipe)   ┌─────────────┐
+│ Claude Code │◄──────────────►│  Bridge      │◄───────────────►│ Pi --mode   │
+│  (terminal) │                │ MCP Server   │                 │   rpc       │
+└─────────────┘                │              │                 └─────────────┘
+                               │  ┌────────┐  │
+                               │  │ HTTP   │  │◄── curl / Hermes
+                               │  │ :9090  │  │
+                               │  └────────┘  │
+                               └──────────────┘
+```
+
+- **Pi `--mode rpc`** — Pi's built-in headless mode. JSONL over stdin/stdout.
+- **Bridge** — Wraps Pi's RPC in an MCP server (for Claude) + HTTP server (for scripts).
+- **Shared core** — `PiBridge` class manages agent registry, lifecycle, and auth injection.
+
+---
+
+## Local Development
+
+```bash
+git clone https://github.com/masterbatcoderman10/claude-pi-bridge.git
+cd claude-pi-bridge
+npm install
+npm run dev:mcp    # MCP server via tsx
+npm run dev:http   # HTTP server via tsx
+```
+
+---
+
+## License
+
+MIT
