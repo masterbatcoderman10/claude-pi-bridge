@@ -10,7 +10,10 @@
   "scripts": {
     "build": "tsc",
     "dev:mcp": "tsx src/mcp-server.ts",
-    "dev:http": "tsx src/http-server.ts"
+    "dev:http": "tsx src/http-server.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
@@ -19,7 +22,9 @@
   "devDependencies": {
     "@types/node": "^22",
     "tsx": "^4",
-    "typescript": "^5.7"
+    "typescript": "^5.7",
+    "vitest": "^3.0.0",
+    "@vitest/coverage-v8": "^3.0.0"
   },
   "engines": {
     "node": ">=20"
