@@ -41,6 +41,10 @@ Pi agents run **headless** in the background. Claude manages them like a project
 
 ## Install
 
+No global install needed. Claude Code will download and run it automatically via `npx`.
+
+If you want to install manually:
+
 ```bash
 npm install -g claude-pi-bridge
 ```
@@ -110,7 +114,21 @@ Add to `~/.mcp.json`:
 {
   "mcpServers": {
     "claude-pi-bridge": {
-      "command": "claude-pi-bridge"
+      "command": "npx",
+      "args": ["-y", "claude-pi-bridge"]
+    }
+  }
+}
+```
+
+On Windows, wrap with `cmd /c`:
+
+```json
+{
+  "mcpServers": {
+    "claude-pi-bridge": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "claude-pi-bridge"]
     }
   }
 }
@@ -203,9 +221,9 @@ Claude spawns 3 agents, sends prompts, then you collect results as they finish.
 Run the standalone HTTP server:
 
 ```bash
-claude-pi-bridge-http
+npx -y claude-pi-bridge-http
 # or with a custom port
-CLAUDE_PI_BRIDGE_PORT=8080 claude-pi-bridge-http
+CLAUDE_PI_BRIDGE_PORT=8080 npx -y claude-pi-bridge-http
 ```
 
 All endpoints accept POST with JSON body and return JSON.

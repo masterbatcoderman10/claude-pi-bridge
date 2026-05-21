@@ -2,45 +2,42 @@
 
 Step-by-step instructions to connect `claude-pi-bridge` to Claude Code.
 
-## Step 1: Install
+## Step 1: Prerequisites
 
-```bash
-npm install -g claude-pi-bridge
+- **Node.js >= 20**
+- **Pi CLI** installed: `npm install -g @earendil-works/pi-coding-agent`
+- **API keys** set as env vars (e.g., `OPENROUTER_API_KEY`) or in `~/.pi/agent/auth.json`
+
+No need to install `claude-pi-bridge` — Claude Code will download it automatically via `npx`.
+
+## Step 2: Configure (Optional)
+
+If Pi already works on your machine, you probably don't need a config file.
+
+Create `~/.claude-pi-bridge/config.json` only if you want defaults:
+
+```json
+{
+  "defaults": {
+    "provider": "openrouter",
+    "model": "moonshotai/kimi-k2.6"
+  }
+}
 ```
 
-Verify:
-```bash
-which claude-pi-bridge
-which claude-pi-bridge-http
-```
-
-Both should print a path. If not, ensure your npm global bin directory is in `$PATH`.
-
-## Step 2: Configure Providers
-
-Create the config directory and file:
-
-```bash
-mkdir -p ~/.claude-pi-bridge
-```
-
-Write `~/.claude-pi-bridge/config.json`:
+Or a fuller config:
 
 ```json
 {
   "providers": {
-    "anthropic": {
-      "apiKeyEnvVar": "ANTHROPIC_API_KEY",
-      "defaultModel": "claude-sonnet-4-20250514"
-    },
     "openrouter": {
       "apiKeyEnvVar": "OPENROUTER_API_KEY",
-      "defaultModel": "anthropic/claude-sonnet-4"
+      "defaultModel": "moonshotai/kimi-k2.6"
     }
   },
   "defaults": {
     "provider": "openrouter",
-    "model": "anthropic/claude-sonnet-4",
+    "model": "moonshotai/kimi-k2.6",
     "thinkingLevel": "medium"
   },
   "limits": {
@@ -48,18 +45,6 @@ Write `~/.claude-pi-bridge/config.json`:
     "defaultTimeoutMs": 120000
   }
 }
-```
-
-Set API keys in your shell profile (`~/.zshrc`, `~/.bashrc`, etc.):
-
-```bash
-export ANTHROPIC_API_KEY="sk-..."
-export OPENROUTER_API_KEY="sk-..."
-```
-
-Then reload:
-```bash
-source ~/.zshrc   # or ~/.bashrc
 ```
 
 ## Step 3: Add to `~/.mcp.json`
@@ -70,7 +55,21 @@ Create or edit `~/.mcp.json`:
 {
   "mcpServers": {
     "claude-pi-bridge": {
-      "command": "claude-pi-bridge"
+      "command": "npx",
+      "args": ["-y", "claude-pi-bridge"]
+    }
+  }
+}
+```
+
+On Windows:
+
+```json
+{
+  "mcpServers": {
+    "claude-pi-bridge": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "claude-pi-bridge"]
     }
   }
 }
@@ -83,7 +82,8 @@ If you already have other MCP servers, merge them:
   "mcpServers": {
     "existing-server": { ... },
     "claude-pi-bridge": {
-      "command": "claude-pi-bridge"
+      "command": "npx",
+      "args": ["-y", "claude-pi-bridge"]
     }
   }
 }
