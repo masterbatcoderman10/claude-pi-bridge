@@ -1,8 +1,12 @@
 {
   "name": "claude-pi-bridge",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "MCP server that lets Claude Code spawn and manage headless Pi coding agents",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/masterbatcoderman10/claude-pi-bridge.git"
+  },
   "bin": {
     "claude-pi-bridge": "dist/mcp-server.js",
     "claude-pi-bridge-http": "dist/http-server.js"
