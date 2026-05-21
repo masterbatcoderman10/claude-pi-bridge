@@ -49,7 +49,28 @@ npm install -g claude-pi-bridge
 
 ## Configure
 
-Create `~/.claude-pi-bridge/config.json`:
+**If Pi already works on your machine, the bridge probably needs zero config.**
+
+The bridge inherits all environment variables from your shell, so if `pi` can already find your API keys, the bridge can too. Pi also reads credentials from `~/.pi/agent/auth.json`.
+
+Create `~/.claude-pi-bridge/config.json` **only if** you want:
+- Per-agent defaults (provider, model, thinking level)
+- A different API key env var name than the default
+- To hardcode API keys in a config file
+- To change max concurrent agents or timeout
+
+### Minimal config (optional)
+
+```json
+{
+  "defaults": {
+    "provider": "openrouter",
+    "model": "moonshotai/kimi-k2.6"
+  }
+}
+```
+
+### Full config example
 
 ```json
 {
@@ -78,16 +99,6 @@ Create `~/.claude-pi-bridge/config.json`:
   }
 }
 ```
-
-Set your API keys as environment variables (e.g., in `~/.zshrc` or `~/.bashrc`):
-
-```bash
-export ANTHROPIC_API_KEY="sk-..."
-export OPENROUTER_API_KEY="sk-or-..."
-export GROQ_API_KEY="gsk-..."
-```
-
-**How auth works:** The bridge reads your config, resolves the provider's API key env var name, and passes it to each Pi process as an environment variable. Pi then uses that key for its LLM calls. Your keys never appear in Claude Code's context.
 
 ---
 
