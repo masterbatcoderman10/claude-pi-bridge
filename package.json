@@ -1,6 +1,6 @@
 {
   "name": "claude-pi-bridge",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "MCP server that lets Claude Code spawn and manage headless Pi coding agents",
   "type": "module",
   "repository": {
