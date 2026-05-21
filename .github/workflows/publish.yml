@@ -30,24 +30,7 @@ jobs:
         with:
           node-version: '22'
           registry-url: 'https://registry.npmjs.org'
-      - name: Install npm CLI for OIDC
-        run: npm install -g npm@latest
       - run: npm ci
       - run: npm run build
       - name: Publish to npm with OIDC
-        run: |
-          # Exchange GitHub OIDC token for npm access token
-          NPM_ACCESS_TOKEN=$(curl -s -X POST \
-            -H "Content-Type: application/json" \
-            -d "{\"github_oidc_token\":\"${{ steps.oidc.outputs.token }}\",\"package\":\"claude-pi-bridge\"}" \
-            https://registry.npmjs.org/-/npm/v1/tokens/github-actions 2>/dev/null || echo "")
-          
-          if [ -n "$NPM_ACCESS_TOKEN" ]; then
-            echo "//registry.npmjs.org/:_authToken=${NPM_ACCESS_TOKEN}" > ~/.npmrc
-            npm publish --access public --provenance
-          else
-            echo "OIDC token exchange failed, falling back to NPM_TOKEN"
-            npm publish --access public
-          fi
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access public --provenance
